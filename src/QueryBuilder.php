@@ -382,6 +382,82 @@ class QueryBuilder
     }
 
     /**
+     * Insert a single row and return its generated primary key.
+     * For PostgreSQL, uses RETURNING to fetch the id in one round-trip.
+     * For other drivers, falls back to PDO::lastInsertId().
+     *
+     * @param array $columnsToValues an associative array of column => value pairs for a single row
+     * @param Expression|string $idColumn the id/primary key column to return (default: 'id')
+     * @param string|null $resultedSql the generated SQL (output)
+     * @return int|string|null the inserted id (int/string), or null on failure
+     * @throws QueryBuilderException
+     */
+    public function insertGetId(array $columnsToValues, Expression|string $idColumn = 'id', ?string &$resultedSql = null): int|string|null
+    {
+        if ($this->fromClause === null) {
+            throw new \TypeError('No table specified for insert operation');
+        }
+
+        // Ensure single-row insert
+        if (!empty($columnsToValues) && is_array(reset($columnsToValues))) {
+            throw new QueryBuilderException(QueryBuilderException::INVALID_QUERY, 'insertGetId supports single-row inserts only.');
+        }
+
+        try {
+            $this->bindingsManager->reset();
+
+            // Build columns and placeholder values
+            $columns = array_keys($columnsToValues);
+            $values = array_map(function ($value) {
+                return $this->bindingsManager->add($value);
+            }, $columnsToValues);
+
+            $insertStatement = new InsertStatement(
+                $this->fromClause->table,
+                $columns,
+                $values,
+                null,
+                null
+            );
+
+            $baseSql = $this->dialect->compileInsert($insertStatement);
+
+            // For Postgres use RETURNING to fetch the id in one go
+            if ($this->dialect instanceof PostgresDialect) {
+                $returning = ' RETURNING ' . $this->dialect->quoteIdentifier($idColumn);
+                $query = $baseSql . $returning . $this->queryEndMarker();
+                $resultedSql = $query;
+                $statement = $this->pdo->prepare($query);
+                if (!$statement->execute($this->bindingsManager->getBindingsOrNull())) {
+                    return null;
+                }
+                $id = $statement->fetchColumn();
+                if ($id === false) {
+                    return null;
+                }
+                return is_numeric($id) ? (int)$id : $id;
+            }
+
+            // Fallback for other drivers: execute then read lastInsertId
+            $query = $baseSql . $this->queryEndMarker();
+            $resultedSql = $query;
+            $statement = $this->pdo->prepare($query);
+            if (!$statement->execute($this->bindingsManager->getBindingsOrNull())) {
+                return null;
+            }
+            $lastId = $this->pdo->lastInsertId();
+            if ($lastId === '0' || $lastId === '') {
+                // Some drivers might not support lastInsertId as expected
+                return null;
+            }
+            return is_numeric($lastId) ? (int)$lastId : $lastId;
+
+        } finally {
+            $this->resetBuilderState();
+        }
+    }
+
+    /**
      * Insert data and ignore on duplicate key conflicts
      * @param array $columnsToValues an associative array of columns to values to be inserted
      * @param array|null $uniqueColumns columns to check for conflicts (if null, uses all columns)

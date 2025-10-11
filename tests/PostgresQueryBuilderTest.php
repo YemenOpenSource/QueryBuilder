@@ -445,6 +445,42 @@ class PostgresQueryBuilderTest extends TestCase
         $this->assertEquals('INSERT INTO "users" ("id", "name") VALUES (:v1, :v2) ON CONFLICT ("id") DO NOTHING;', $query);
     }
 
+    public function testInsertGetIdSqlDefault()
+    {
+        $builder = new QueryBuilder($this->pdo, new PostgresDialect());
+        $query = null;
+
+        try {
+            // Only provide non-id columns; expect RETURNING "id"
+            $builder
+                ->table('users')
+                ->insertGetId([
+                    'name' => 'John'
+                ], 'id', $query);
+        } catch (Exception|Error) {
+        }
+
+        $this->assertEquals('INSERT INTO "users" ("name") VALUES (:v1) RETURNING "id";', $query);
+    }
+
+    public function testInsertGetIdSqlCustomColumn()
+    {
+        $builder = new QueryBuilder($this->pdo, new PostgresDialect());
+        $query = null;
+
+        try {
+            // Custom id column name should be quoted in RETURNING
+            $builder
+                ->table('users')
+                ->insertGetId([
+                    'name' => 'Jane'
+                ], 'user_id', $query);
+        } catch (Exception|Error) {
+        }
+
+        $this->assertEquals('INSERT INTO "users" ("name") VALUES (:v1) RETURNING "user_id";', $query);
+    }
+
     public function testUpsertWithExpression()
     {
         $builder = new QueryBuilder($this->pdo, new PostgresDialect());
