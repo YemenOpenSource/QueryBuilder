@@ -69,6 +69,27 @@ MySQL continues to support `ON DUPLICATE KEY UPDATE` through the same `upsert` A
 
 When you omit the dialect, the builder inspects `PDO::ATTR_DRIVER_NAME` and automatically selects `PostgresDialect` for `pgsql` connections, falling back to MySQL-style quoting for everything else.
 
+### Insert And Get ID (PostgreSQL)
+
+When using the `PostgresDialect`, you can insert a single row and retrieve its generated id in one round-trip via `RETURNING`:
+
+```php
+use Abdulelahragih\QueryBuilder\Grammar\Dialects\PostgresDialect;
+
+$qb = new \Abdulelahragih\QueryBuilder\QueryBuilder($pdo, new PostgresDialect());
+
+$id = $qb->table('users')->insertGetId([
+    'name' => 'John',
+]);
+
+// Optionally specify the id column name (defaults to 'id')
+$id = $qb->table('users')->insertGetId([
+    'name' => 'Jane',
+], 'user_id');
+```
+
+Note: `insertGetId` expects a single row payload. For multi-row inserts, use `insert` or `upsert`.
+
 ## Nested Where
 You can add nested conditions to the Where clause by passing a closure to the `where` method. <br>
 ```php
