@@ -25,6 +25,11 @@ use InvalidArgumentException;
 
 abstract class AbstractDialect implements Dialect
 {
+    public function compileRandom(string|int $seed = ''): string
+    {
+        return 'RANDOM()';
+    }
+
     public function compileSelect(SelectStatement $statement): string
     {
         $segments = ['SELECT'];

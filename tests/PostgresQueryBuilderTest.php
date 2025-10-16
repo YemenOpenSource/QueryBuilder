@@ -256,6 +256,17 @@ class PostgresQueryBuilderTest extends TestCase
         $this->assertEquals('SELECT "id", "name" FROM "users" ORDER BY "id" ASC, "name" DESC;', $query);
     }
 
+    public function testInRandomOrder()
+    {
+        $builder = new QueryBuilder($this->pdo, new PostgresDialect());
+        $query = $builder
+            ->table('users')
+            ->select('id')
+            ->inRandomOrder()
+            ->toSql();
+        $this->assertEquals('SELECT "id" FROM "users" ORDER BY RANDOM() ASC;', $query);
+    }
+
     public function testLimit()
     {
         $builder = new QueryBuilder($this->pdo, new PostgresDialect());
