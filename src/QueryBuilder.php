@@ -547,7 +547,7 @@ class QueryBuilder
         if (!isset($this->orderByClause)) {
             $this->orderByClause = new OrderByClause();
         }
-        $this->orderByClause->addColumn(Expression::make($this->dialect->compileRandom($seed)), OrderType::Ascending);
+        $this->orderByClause->addRandom(Expression::make($this->dialect->compileRandom($seed)));
         return $this;
     }
 
