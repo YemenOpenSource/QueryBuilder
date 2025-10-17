@@ -10,12 +10,14 @@ class OrderItem
     private Expression|string $expression;
     private ?OrderType $orderType;
     private int $priority;
+    private int $index;
 
-    public function __construct(Expression|string $expression, ?OrderType $orderType = null, int $priority = 0)
+    public function __construct(Expression|string $expression, ?OrderType $orderType = null, int $priority = 0, int $index = 0)
     {
         $this->expression = $expression;
         $this->orderType = $orderType;
         $this->priority = $priority;
+        $this->index = $index;
     }
 
     public function getExpression(): Expression|string
@@ -32,5 +34,9 @@ class OrderItem
     {
         return $this->priority;
     }
-}
 
+    public function getIndex(): int
+    {
+        return $this->index;
+    }
+}

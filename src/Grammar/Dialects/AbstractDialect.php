@@ -191,9 +191,15 @@ abstract class AbstractDialect implements Dialect
             return '';
         }
 
-        // Ensure items with higher priority (e.g., random) come first
+        // Ensure items with higher priority (e.g., random) come first.
+        // Use original insertion index as a stable tiebreaker so equal-priority
+        // items preserve the chaining order.
         usort($items, function (OrderItem $a, OrderItem $b) {
-            return $b->getPriority() <=> $a->getPriority();
+            $byPriority = $b->getPriority() <=> $a->getPriority();
+            if ($byPriority !== 0) {
+                return $byPriority;
+            }
+            return $a->getIndex() <=> $b->getIndex();
         });
 
         $parts = array_map(function (OrderItem $item): string {

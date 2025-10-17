@@ -269,6 +269,32 @@ class MysqlDialectTest extends TestCase
         $this->assertEquals('SELECT `id` FROM `users` ORDER BY RAND(), `id` ASC;', $query);
     }
 
+    public function testRandomPreservesRelativeOrderOfOtherColumnsWhenRandomLast()
+    {
+        $builder = new QueryBuilder($this->pdo);
+        $query = $builder
+            ->table('users')
+            ->select('id')
+            ->orderBy('name')
+            ->orderByDesc('id')
+            ->inRandomOrder()
+            ->toSql();
+        $this->assertEquals('SELECT `id` FROM `users` ORDER BY RAND(), `name` ASC, `id` DESC;', $query);
+    }
+
+    public function testRandomPreservesRelativeOrderOfOtherColumnsWhenRandomFirst()
+    {
+        $builder = new QueryBuilder($this->pdo);
+        $query = $builder
+            ->table('users')
+            ->select('id')
+            ->inRandomOrder()
+            ->orderBy('name')
+            ->orderByDesc('id')
+            ->toSql();
+        $this->assertEquals('SELECT `id` FROM `users` ORDER BY RAND(), `name` ASC, `id` DESC;', $query);
+    }
+
     public function testLimit()
     {
         $builder = new QueryBuilder($this->pdo);

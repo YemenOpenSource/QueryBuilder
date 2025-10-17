@@ -291,6 +291,32 @@ class PostgresQueryBuilderTest extends TestCase
         $this->assertEquals('SELECT "id" FROM "users" ORDER BY RANDOM(), "id" ASC;', $query);
     }
 
+    public function testRandomPreservesRelativeOrderOfOtherColumnsWhenRandomLast()
+    {
+        $builder = new QueryBuilder($this->pdo, new PostgresDialect());
+        $query = $builder
+            ->table('users')
+            ->select('id')
+            ->orderBy('name')
+            ->orderByDesc('id')
+            ->inRandomOrder()
+            ->toSql();
+        $this->assertEquals('SELECT "id" FROM "users" ORDER BY RANDOM(), "name" ASC, "id" DESC;', $query);
+    }
+
+    public function testRandomPreservesRelativeOrderOfOtherColumnsWhenRandomFirst()
+    {
+        $builder = new QueryBuilder($this->pdo, new PostgresDialect());
+        $query = $builder
+            ->table('users')
+            ->select('id')
+            ->inRandomOrder()
+            ->orderBy('name')
+            ->orderByDesc('id')
+            ->toSql();
+        $this->assertEquals('SELECT "id" FROM "users" ORDER BY RANDOM(), "name" ASC, "id" DESC;', $query);
+    }
+
     public function testLimit()
     {
         $builder = new QueryBuilder($this->pdo, new PostgresDialect());
